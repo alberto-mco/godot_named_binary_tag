@@ -25,10 +25,10 @@ The file can also be compressed or encrypted.
 ``` GDScript
 func _ready()->void:
     #Create a new instance of the GNBT class
-	var l_write_file:GNBT = GNBT.new()
+    var l_write_file:GNBT = GNBT.new()
 	
     #Set the data to be saved
-	l_write_file.data = { "data" : "test" }
+    l_write_file.data = { "data" : "test" }
 
     #Or any supported data type
     #l_write_file.data = "test"
@@ -37,18 +37,18 @@ func _ready()->void:
     #l_write_file.data = [ "0", 1, 3, 5 ]
 	
     #Save the file
-	l_write_file.save_file("user://saved_data.dat")
+    l_write_file.save_file("user://saved_data.dat")
 ```
 
 ## How to read from a file
 ``` GDScript
 func _ready()->void:
     #Create a new instance of the GNBT class
-	var l_read_file:GNBT = GNBT.new()
+    var l_read_file:GNBT = GNBT.new()
 	
     #Load the file
-	l_read_file.load_file("user://saved_data.dat")
+    l_read_file.load_file("user://saved_data.dat")
 	
     #Print the data from the file (or save it wherever you want)
-	print(l_read_file.data)
+    print(l_read_file.data)
 ```
