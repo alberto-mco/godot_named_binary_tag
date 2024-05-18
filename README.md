@@ -16,6 +16,11 @@ For now, only the following data types are supported:
 
 The file can also be compressed or encrypted.
 
+## Why use GNBT instead of JSON?
+- It does not convert dictionary keys from Integer to String, for example.
+- It can be extended to save any type of value or key, retrieving it in its original variable type.
+- Simplifies saving data to a file and reading it back.
+
 ## How to write to a file
 ``` GDScript
 func _ready()->void:
