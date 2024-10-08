@@ -10,9 +10,11 @@ For now, only the following data types are supported:
 - Variant.Type.TYPE_INT
 - Variant.Type.TYPE_FLOAT
 - Variant.Type.TYPE_STRING
+- Variant.Type.TYPE_VECTOR2
+- Variant.Type.TYPE_VECTOR2I
 - Variant.Type.TYPE_STRING_NAME
-- Variant.Type.TYPE_ARRAY
 - Variant.Type.TYPE_DICTIONARY
+- Variant.Type.TYPE_ARRAY
 
 The file can also be compressed or encrypted.
 
