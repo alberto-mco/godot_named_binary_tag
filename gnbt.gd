@@ -76,7 +76,7 @@ func _get_array(p_file:FileAccess)->Array:
 	#Recorremos el bucle hasta obtener todos los elementos del array
 	while (l_remaining_items > 0):
 		#Obtenemos el tag
-		var l_tag_id:int = p_file.get_16()
+		var l_tag_id:int = p_file.get_8()
 		
 		#Obtenemos el valor
 		l_result.append(_parse_tag(p_file, l_tag_id))
@@ -111,7 +111,7 @@ func _store_array(p_file:FileAccess, p_values:Array)->void:
 		#Comprobamos si es un item que se puede guardar
 		if (GNBT.is_supported_variant_type(l_tag_id)):
 			#Guardamos el identificador del tipo de dato
-			p_file.store_16(l_tag_id)
+			p_file.store_8(l_tag_id)
 			
 			#Guardamos el valor
 			_store_tag(p_file, l_tag_id, l_value)
@@ -126,7 +126,7 @@ func _get_dictionary(p_file:FileAccess)->Dictionary:
 	#Recorremos el bucle hasta llegar al final del diccionario
 	while (l_end_of_dictionary == false):
 		#Obtenemos el tag del valor
-		var l_tag_id:int = p_file.get_16()
+		var l_tag_id:int = p_file.get_8()
 		
 		#Comprobamos si hemos llegado al final del diccionario
 		if (l_tag_id == Variant.Type.TYPE_NIL):
@@ -134,7 +134,7 @@ func _get_dictionary(p_file:FileAccess)->Dictionary:
 			l_end_of_dictionary = true
 		else:
 			#Obtenemos el tag de la clave
-			var l_key_tag_id:int = p_file.get_16()
+			var l_key_tag_id:int = p_file.get_8()
 			
 			#Obtenemos la clave
 			var l_key:Variant = _parse_tag(p_file, l_key_tag_id)
@@ -159,10 +159,10 @@ func _store_dictionary(p_file:FileAccess, p_value:Dictionary)->void:
 			#Comprobamos si soportamos el valor
 			if (GNBT.is_supported_variant_type(l_value_tag_id)):
 				#Guardamos el identificador del tipo de dato
-				p_file.store_16(l_value_tag_id)
+				p_file.store_8(l_value_tag_id)
 				
 				#Guardamos el identificador del tipo de dato
-				p_file.store_16(l_key_tag_id)
+				p_file.store_8(l_key_tag_id)
 				
 				#Guardamos la clave
 				_store_tag(p_file, l_key_tag_id, l_key)
@@ -171,7 +171,35 @@ func _store_dictionary(p_file:FileAccess, p_value:Dictionary)->void:
 				_store_tag(p_file, l_value_tag_id, p_value[l_key])
 	
 	#Guardamos el marcador de final de diccionario
-	p_file.store_16(Variant.Type.TYPE_NIL)
+	p_file.store_8(Variant.Type.TYPE_NIL)
+
+#================================================================================
+#Obtiene un Vector2i
+#================================================================================
+func _get_vector2i(p_file:FileAccess)->Vector2i:
+	return Vector2i(p_file.get_64(), p_file.get_64())
+
+#================================================================================
+#Almacena un Vector2i en el fichero
+#================================================================================
+func _store_vector2i(p_file:FileAccess, p_value:Vector2i)->void:
+	#Guardamos ambas coordenadas
+	p_file.store_64(p_value.x)
+	p_file.store_64(p_value.y)
+
+#================================================================================
+#Obtiene un Vector2
+#================================================================================
+func _get_vector2(p_file:FileAccess)->Vector2:
+	return Vector2(p_file.get_double(), p_file.get_double())
+
+#================================================================================
+#Almacena un Vector2 en el fichero
+#================================================================================
+func _store_vector2(p_file:FileAccess, p_value:Vector2)->void:
+	#Guardamos ambas coordenadas
+	p_file.store_double(p_value.x)
+	p_file.store_double(p_value.y)
 
 #================================================================================
 #Parsea un fichero NBT y vuelca la información en la variable "data"
@@ -181,20 +209,24 @@ func _parse_tag(p_file:FileAccess, p_tag_id:int)->Variant:
 	
 	#Comprobamos el tipo de tag
 	match (p_tag_id):
-		Variant.Type.TYPE_BOOL:
+		Variant.Type.TYPE_BOOL: #1
 			l_result = (p_file.get_8() > 0)
-		Variant.Type.TYPE_INT:
+		Variant.Type.TYPE_INT: #2
 			l_result = p_file.get_64()
-		Variant.Type.TYPE_FLOAT:
-			l_result = p_file.get_float()
-		Variant.Type.TYPE_STRING:
+		Variant.Type.TYPE_FLOAT: #3
+			l_result = p_file.get_double()
+		Variant.Type.TYPE_STRING: #4
 			l_result = _get_string(p_file)
-		Variant.Type.TYPE_STRING_NAME:
+		Variant.Type.TYPE_VECTOR2: #5
+			l_result = _get_vector2(p_file)
+		Variant.Type.TYPE_VECTOR2I: #6
+			l_result = _get_vector2i(p_file)
+		Variant.Type.TYPE_STRING_NAME: #21
 			l_result = _get_string_name(p_file)
-		Variant.Type.TYPE_ARRAY:
-			l_result = _get_array(p_file)
-		Variant.Type.TYPE_DICTIONARY:
+		Variant.Type.TYPE_DICTIONARY: #27
 			l_result = _get_dictionary(p_file)
+		Variant.Type.TYPE_ARRAY: #28
+			l_result = _get_array(p_file)
 	
 	return l_result
 
@@ -204,20 +236,24 @@ func _parse_tag(p_file:FileAccess, p_tag_id:int)->Variant:
 func _store_tag(p_file:FileAccess, p_tag_id:Variant.Type, p_value:Variant)->void:
 	#Comprobamos el tipo de tag
 	match (p_tag_id):
-		Variant.Type.TYPE_BOOL:
+		Variant.Type.TYPE_BOOL: #1
 			p_file.store_8(1 if p_value else 0)
-		Variant.Type.TYPE_INT:
+		Variant.Type.TYPE_INT: #2
 			p_file.store_64(p_value)
-		Variant.Type.TYPE_FLOAT:
-			p_file.store_float(p_value)
-		Variant.Type.TYPE_STRING:
+		Variant.Type.TYPE_FLOAT: #3
+			p_file.store_double(p_value)
+		Variant.Type.TYPE_STRING: #4
 			_store_string(p_file, p_value)
-		Variant.Type.TYPE_STRING_NAME:
+		Variant.Type.TYPE_VECTOR2: #5
+			_store_vector2(p_file, p_value)
+		Variant.Type.TYPE_VECTOR2I: #6
+			_store_vector2i(p_file, p_value)
+		Variant.Type.TYPE_STRING_NAME: #21
 			_store_string_name(p_file, p_value)
-		Variant.Type.TYPE_ARRAY:
-			_store_array(p_file, p_value)
-		Variant.Type.TYPE_DICTIONARY:
+		Variant.Type.TYPE_DICTIONARY: #27
 			_store_dictionary(p_file, p_value)
+		Variant.Type.TYPE_ARRAY: #28
+			_store_array(p_file, p_value)
 
 #================================================================================
 #Carga un fichero NBT
@@ -252,7 +288,7 @@ func load_file(p_path:String, p_compression:GNBTCompressionMode = GNBTCompressio
 	if (l_file != null):
 		#Comprobamos si almenos hay 1 byte
 		if (l_file.get_length() > 0):
-			var l_root_tag_id:int = l_file.get_16()
+			var l_root_tag_id:int = l_file.get_8()
 			
 			#Procesamos el primer tag
 			data = _parse_tag(l_file, l_root_tag_id)
@@ -262,8 +298,8 @@ func load_file(p_path:String, p_compression:GNBTCompressionMode = GNBTCompressio
 		else:
 			l_result = Error.ERR_PARSE_ERROR
 	else:
-		#Obtenemos el error que generó la apertura del fichero
-		l_result = l_file.get_error()
+		#Marcamos el resultado como error
+		l_result = Error.FAILED
 	
 	return l_result
 
@@ -281,7 +317,7 @@ func load_encrypted_file(p_path:String, p_password:String)->Error:
 	if (l_file != null):
 		#Comprobamos si almenos hay 1 byte
 		if (l_file.get_length() > 0):
-			var l_root_tag_id:int = l_file.get_16()
+			var l_root_tag_id:int = l_file.get_8()
 			
 			#Procesamos el primer tag
 			data = _parse_tag(l_file, l_root_tag_id)
@@ -291,8 +327,8 @@ func load_encrypted_file(p_path:String, p_password:String)->Error:
 		else:
 			l_result = Error.ERR_PARSE_ERROR
 	else:
-		#Obtenemos el error que generó la apertura del fichero
-		l_result = l_file.get_error()
+		#Marcamos el resultado como error
+		l_result = Error.FAILED
 	
 	return l_result
 
@@ -327,12 +363,12 @@ func save_file(p_path:String, p_compression:GNBTCompressionMode = GNBTCompressio
 	
 	#Comprobamos si el fichero se ha abierto correctamente
 	if (l_file != null):
-		var l_root_tag_id:Variant.Type = typeof(data)
+		var l_root_tag_id:Variant.Type = (typeof(data) as Variant.Type)
 		
 		#Comprobamos si es un tipo de dato que podamos guardar en el fichero
 		if (GNBT.is_supported_variant_type(l_root_tag_id)):
 			#Guardamos el identificador del tipo de dato
-			l_file.store_16(l_root_tag_id)
+			l_file.store_8(l_root_tag_id)
 			
 			#Guardamos el valor
 			_store_tag(l_file, l_root_tag_id, data)
@@ -340,8 +376,8 @@ func save_file(p_path:String, p_compression:GNBTCompressionMode = GNBTCompressio
 		#Cerramos el fichero
 		l_file.close()
 	else:
-		#Obtenemos el error que generó la apertura del fichero
-		l_result = l_file.get_error()
+		#Marcamos el resultado como error
+		l_result = Error.FAILED
 	
 	return l_result
 
@@ -357,12 +393,12 @@ func save_encrypted_file(p_path:String, p_password:String)->Error:
 	
 	#Comprobamos si el fichero se ha abierto correctamente
 	if (l_file != null):
-		var l_root_tag_id:Variant.Type = typeof(data)
+		var l_root_tag_id:Variant.Type = (typeof(data) as Variant.Type)
 		
 		#Comprobamos si es un tipo de dato que podamos guardar en el fichero
 		if (GNBT.is_supported_variant_type(l_root_tag_id)):
 			#Guardamos el identificador del tipo de dato
-			l_file.store_16(l_root_tag_id)
+			l_file.store_8(l_root_tag_id)
 			
 			#Guardamos el valor
 			_store_tag(l_file, l_root_tag_id, data)
@@ -370,8 +406,8 @@ func save_encrypted_file(p_path:String, p_password:String)->Error:
 		#Cerramos el fichero
 		l_file.close()
 	else:
-		#Obtenemos el error que generó la apertura del fichero
-		l_result = l_file.get_error()
+		#Marcamos el resultado como error
+		l_result = Error.FAILED
 	
 	return l_result
 
@@ -383,19 +419,55 @@ static func is_supported_variant_type(p_variant_type:Variant.Type)->bool:
 	
 	#Comprobamos el tipo de variant
 	match (p_variant_type):
-		Variant.Type.TYPE_BOOL:
+		Variant.Type.TYPE_BOOL: #1 - La variable es de tipo bool.
 			l_result = true
-		Variant.Type.TYPE_INT:
+		Variant.Type.TYPE_INT: #2 - La variable es de tipo int.
 			l_result = true
-		Variant.Type.TYPE_FLOAT:
+		Variant.Type.TYPE_FLOAT: #3 - Variable is of type float.
 			l_result = true
-		Variant.Type.TYPE_STRING:
+		Variant.Type.TYPE_STRING: #4 - La variable es de tipo String.
 			l_result = true
-		Variant.Type.TYPE_STRING_NAME:
+		Variant.Type.TYPE_VECTOR2: #5 - La variable es de tipo Vector2.
 			l_result = true
-		Variant.Type.TYPE_ARRAY:
+		Variant.Type.TYPE_VECTOR2I: #6 - Variable is of type Vector2i.
 			l_result = true
-		Variant.Type.TYPE_DICTIONARY:
+		Variant.Type.TYPE_STRING_NAME: #21 - Variable is of type StringName.
+			l_result = true
+		Variant.Type.TYPE_DICTIONARY: #27 - La variable es de tipo Dictionary.
+			l_result = true
+		Variant.Type.TYPE_ARRAY: #28 - La variable es de tipo Array.
 			l_result = true
 	
+	#TO DO
+	#Variant.Type.TYPE_NIL = 0 - La variable es null.
+	#Variant.Type.TYPE_RECT2 = 7 - La variable es de tipo Rect2.
+	#Variant.Type.TYPE_RECT2I = 8 - Variable is of type Rect2i.
+	#Variant.Type.TYPE_VECTOR3 = 9 - La variable es de tipo Vector3.
+	#Variant.Type.TYPE_VECTOR3I = 10 - Variable is of type Vector3i.
+	#Variant.Type.TYPE_TRANSFORM2D = 11 - La variable es de tipo Transform2D.
+	#Variant.Type.TYPE_VECTOR4 = 12 - Variable is of type Vector4.
+	#Variant.Type.TYPE_VECTOR4I = 13 - Variable is of type Vector4i.
+	#Variant.Type.TYPE_PLANE = 14 - La variable es de tipo Plane.
+	#Variant.Type.TYPE_QUATERNION = 15 - Variable is of type Quaternion.
+	#Variant.Type.TYPE_AABB = 16 - La variable es de tipo AABB.
+	#Variant.Type.TYPE_BASIS = 17 - La variable es de tipo Basis.
+	#Variant.Type.TYPE_TRANSFORM3D = 18 - Variable is of type Transform3D.
+	#Variant.Type.TYPE_PROJECTION = 19 - Variable is of type Projection.
+	#Variant.Type.TYPE_COLOR = 20 - La variable es de tipo Color.
+	#Variant.Type.TYPE_NODE_PATH = 22 - La variable es de tipo NodePath.
+	#Variant.Type.TYPE_RID = 23 - La variable es de tipo RID.
+	#Variant.Type.TYPE_OBJECT = 24 - La variable es de tipo Object.
+	#Variant.Type.TYPE_CALLABLE = 25 - Variable is of type Callable.
+	#Variant.Type.TYPE_SIGNAL = 26 - Variable is of type Signal.
+	#Variant.Type.TYPE_PACKED_BYTE_ARRAY = 29 - Variable is of type PackedByteArray.
+	#Variant.Type.TYPE_PACKED_INT32_ARRAY = 30 - Variable is of type PackedInt32Array.
+	#Variant.Type.TYPE_PACKED_INT64_ARRAY = 31 - Variable is of type PackedInt64Array.
+	#Variant.Type.TYPE_PACKED_FLOAT32_ARRAY = 32 - Variable is of type PackedFloat32Array.
+	#Variant.Type.TYPE_PACKED_FLOAT64_ARRAY = 33 - Variable is of type PackedFloat64Array.
+	#Variant.Type.TYPE_PACKED_STRING_ARRAY = 34 - Variable is of type PackedStringArray.
+	#Variant.Type.TYPE_PACKED_VECTOR2_ARRAY = 35 - Variable is of type PackedVector2Array.
+	#Variant.Type.TYPE_PACKED_VECTOR3_ARRAY = 36 - Variable is of type PackedVector3Array.
+	#Variant.Type.TYPE_PACKED_COLOR_ARRAY = 37 - Variable is of type PackedColorArray.
+	#Variant.Type.TYPE_PACKED_VECTOR4_ARRAY = 38 - Variable is of type PackedVector4Array.
+	#Variant.Type.TYPE_MAX = 39 - Representa el tamaño del enum Variant.Type.
 	return l_result
